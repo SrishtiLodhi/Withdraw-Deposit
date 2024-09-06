@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import contractData from "./contractData.json";
 import ERC20ABI from "./ERC20Abi.json";
+import Toastify from "toastify-js";
 
 const contractAddress = contractData.DepositWithdraw.address;
 const contractAbi = contractData.DepositWithdraw.abi;
@@ -87,6 +88,56 @@ export const switchToAmoy = async (provider, localStorageKeys) => {
   }
 };
 
+export const balance = async () => {
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+
+  // Initialize your contract
+  const EthTokenContract = new ethers.Contract(
+    eth,
+    tokenAbi,
+    signer
+  );
+
+  let totalBalanceofContract = await EthTokenContract.balanceOf(contractAddress);
+  totalBalanceofContract = totalBalanceofContract / 1e18;
+  return totalBalanceofContract;
+};
+
+export const balanceOfUSER = async () => {
+
+  const { success: connectSuccess } = await requestAccount();
+
+  if (connectSuccess) {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    let accountAddress = await signer.getAddress();
+
+    // Initialize your contract
+    const EthTokenContract = new ethers.Contract(
+      eth,
+      tokenAbi,
+      signer
+    );
+
+    const USDCTokenContract = new ethers.Contract(
+      usdcAddress,
+      tokenAbi,
+      signer
+    );
+
+    let balanceOfUSDC = await USDCTokenContract.balanceOf(accountAddress);
+    balanceOfUSDC = balanceOfUSDC/1e18
+    let balanceOfETH = await EthTokenContract.balanceOf(accountAddress);
+    balanceOfETH = balanceOfETH/1e18
+
+    return {
+      usdcBalance : balanceOfUSDC,
+      ethBalance : balanceOfETH
+    };
+  }
+};
+
 export const deposit = async (Amount) => {
   try {
     Amount = Amount * 1e18;
@@ -113,6 +164,24 @@ export const deposit = async (Amount) => {
 
       let accountAddress = await signer.getAddress();
       const deployerBalance = await usdcContract.balanceOf(accountAddress);
+    
+      console.log(Amount, "amount")
+      const contractBalance = await balanceOfUSER();
+      console.log((contractBalance.usdcBalance * 1e18) , "contract balance")
+
+if ((contractBalance.usdcBalance * 1e18) < Amount) {
+  Toastify({
+    text: "Don't have enough balance.",
+    duration: 3000,
+    close: true,
+    gravity: "bottom", // `top` or `bottom`
+    position: "right", // `left`, `center` or `right`
+    backgroundColor: "#f44336",
+    stopOnFocus: true, // Prevents dismissing of toast on hover
+  }).showToast();
+  return;
+}
+
       const decimal = await usdcContract.decimals();
       console.log(decimal);
       const deployerallowance = await usdcContract.allowance(accountAddress, contractAddress);
@@ -183,7 +252,20 @@ export const withdraw = async (Amount) => {
         tokenAbi,
         signer
       );
-
+      const contractBalance = await balanceOfUSER();
+      console.log((contractBalance.ethBalance * 1e18) , "contract balance")
+      if ((contractBalance.ethBalance * 1e18) < Amount) {
+        Toastify({
+          text: "Don't have enough balance.",
+          duration: 3000,
+          close: true,
+          gravity: "bottom", // `top` or `bottom`
+          position: "right", // `left`, `center` or `right`
+          backgroundColor: "#f44336",
+          stopOnFocus: true, // Prevents dismissing of toast on hover
+        }).showToast();
+        return;
+      }
       let accountAddress = await signer.getAddress();
       const deployerBalance = await ethContract.balanceOf(accountAddress);
       const deployerallowance = await ethContract.allowance(accountAddress, contractAddress);
@@ -232,52 +314,3 @@ export const withdraw = async (Amount) => {
   }
 };
 
-export const balance = async () => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-
-  // Initialize your contract
-  const EthTokenContract = new ethers.Contract(
-    eth,
-    tokenAbi,
-    signer
-  );
-
-  let totalBalanceofContract = await EthTokenContract.balanceOf(contractAddress);
-  totalBalanceofContract = totalBalanceofContract / 1e18;
-  return totalBalanceofContract;
-};
-
-export const balanceOfUSER = async () => {
-
-  const { success: connectSuccess } = await requestAccount();
-
-  if (connectSuccess) {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    let accountAddress = await signer.getAddress();
-
-    // Initialize your contract
-    const EthTokenContract = new ethers.Contract(
-      eth,
-      tokenAbi,
-      signer
-    );
-
-    const USDCTokenContract = new ethers.Contract(
-      usdcAddress,
-      tokenAbi,
-      signer
-    );
-
-    let balanceOfUSDC = await USDCTokenContract.balanceOf(accountAddress);
-    balanceOfUSDC = balanceOfUSDC/1e18
-    let balanceOfETH = await EthTokenContract.balanceOf(accountAddress);
-    balanceOfETH = balanceOfETH/1e18
-
-    return {
-      usdcBalance : balanceOfUSDC,
-      ethBalance : balanceOfETH
-    };
-  }
-};
