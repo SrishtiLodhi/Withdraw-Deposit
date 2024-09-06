@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.header-container {
+  background-color: rgba(27, 26, 31, 0.8);
+  box-sizing: border-box;
+}
+
+.card{
+  border-radius: 20px;
+  border: 1px solid #9f9fe9;
+}
+
+.card:hover .servicePage-card-gradient {
+  transform: translateY(0%);
+}
